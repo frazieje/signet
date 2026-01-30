@@ -1,5 +1,5 @@
-
-use tonic::{transport::Server, IntoRequest, Request as TonicRequest, Response as TonicResponse, Status};
+pub mod hello_world;
+use tonic::{transport::Server, IntoRequest, Request as TonicRequest, Response as TonicResponse, Status, Streaming};
 
 use http::{Request, Response};
 use http_body_util::Full;
@@ -11,14 +11,29 @@ type SignatureName = String;
 /// This includes the method of the request corresponding to the request (the second element)
 const COVERED_COMPONENTS: &[&str] = &["@status", "\"@method\";req", "date", "content-type", "content-digest"];
 
-use hello_world::greeter_server::{Greeter, GreeterServer};
-use hello_world::{HelloReply, HelloRequest};
-pub mod hello_world {
-    tonic::include_proto!("helloworld"); // The string specified here must match the proto package name
+pub mod envoy {
+    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/gen/envoy/service/ext_proc/v3/envoy.service.ext_proc.v3.rs"));
 }
 
+use envoy::external_processor_server::{ExternalProcessor, ExternalProcessorServer};
+use crate::envoy::ProcessingRequest;
+
+struct SignetExternalProcessor {}
+
+#[tonic::async_trait]
+impl ExternalProcessor for SignetExternalProcessor {
+    type ProcessStream = ();
+
+    async fn process(&self, request: TonicRequest<Streaming<ProcessingRequest>>) -> Result<TonicResponse<Self::ProcessStream>, Status> {
+        todo!()
+    }
+}
+
+
 #[derive(Debug, Default)]
-pub struct MyGreeter {}
+pub struct MyGreeter {
+    x: i32
+}
 
 #[tonic::async_trait]
 impl Greeter for MyGreeter {
