@@ -1,6 +1,9 @@
-pub mod hello_world;
+use std::pin::Pin;
+use envoy_types::pb::envoy::extensions::filters::http::transform::v3::body_transformation::TransformAction;
+use futures_util::Stream;
 use tonic::{transport::Server, IntoRequest, Request as TonicRequest, Response as TonicResponse, Status, Streaming};
-
+use envoy_types::pb::envoy::service::ext_proc::v3::external_processor_server::{ExternalProcessor, ExternalProcessorServer};
+use envoy_types::pb::envoy::service::ext_proc::v3::{ProcessingRequest, ProcessingResponse};
 use http::{Request, Response};
 use http_body_util::Full;
 
@@ -11,55 +14,20 @@ type SignatureName = String;
 /// This includes the method of the request corresponding to the request (the second element)
 const COVERED_COMPONENTS: &[&str] = &["@status", "\"@method\";req", "date", "content-type", "content-digest"];
 
-pub mod envoy {
-    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/gen/envoy/service/ext_proc/v3/envoy.service.ext_proc.v3.rs"));
-}
-
-use envoy::external_processor_server::{ExternalProcessor, ExternalProcessorServer};
-use crate::envoy::ProcessingRequest;
+type BoxStream<T> = Pin<Box<dyn Stream<Item = Result<T, Status>> + Send + 'static>>;
 
 struct SignetExternalProcessor {}
 
 #[tonic::async_trait]
 impl ExternalProcessor for SignetExternalProcessor {
-    type ProcessStream = ();
+    type ProcessStream = BoxStream<ProcessingResponse>;
 
     async fn process(&self, request: TonicRequest<Streaming<ProcessingRequest>>) -> Result<TonicResponse<Self::ProcessStream>, Status> {
         todo!()
     }
 }
 
-
-#[derive(Debug, Default)]
-pub struct MyGreeter {
-    x: i32
-}
-
-#[tonic::async_trait]
-impl Greeter for MyGreeter {
-    async fn say_hello(
-        &self,
-        request: TonicRequest<HelloRequest>, // Accept request of type HelloRequest
-    ) -> Result<TonicResponse<HelloReply>, Status> { // Return an instance of type HelloReply
-        println!("Got a request: {:?}", request);
-
-        let reply = HelloReply {
-            message: format!("Hello {}!", request.into_inner().name), // We must use .into_inner() as the fields of gRPC requests and responses are private
-        };
-
-        Ok(TonicResponse::new(reply)) // Send back our formatted greeting
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
-    let greeter = MyGreeter::default();
-
-    Server::builder()
-        .add_service(GreeterServer::new(greeter))
-        .serve(addr)
-        .await?;
-
     Ok(())
 }
