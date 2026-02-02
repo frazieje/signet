@@ -1,8 +1,9 @@
 use std::pin::Pin;
+use envoy_types::ext_authz::v3::pb::{HeaderValue, HeaderValueOption};
 use tonic::{transport::Server, IntoRequest, Request as TonicRequest, Response as TonicResponse, Status, Streaming};
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 use envoy_types::pb::envoy::service::ext_proc::v3::external_processor_server::{ExternalProcessor, ExternalProcessorServer};
-use envoy_types::pb::envoy::service::ext_proc::v3::{processing_request, ProcessingRequest, processing_response, ProcessingResponse, HeadersResponse, CommonResponse, BodyResponse, TrailersResponse};
+use envoy_types::pb::envoy::service::ext_proc::v3::{processing_request, ProcessingRequest, processing_response, ProcessingResponse, HeadersResponse, CommonResponse, BodyResponse, TrailersResponse, HeaderMutation};
 
 use http::{Request, Response};
 use http_body_util::Full;
@@ -73,8 +74,39 @@ impl ExternalProcessor for SignetExternalProcessor {
                         println!("received ResponseHeaders");
                         processing_response(
                             processing_response::Response::ResponseHeaders(
-                                HeadersResponse { response: Some(CommonResponse::default()) }
+                                HeadersResponse { response:
+                                    Some(
+                                        CommonResponse {
+                                            status: 200,
+                                            header_mutation: Some(
+                                                HeaderMutation {
+                                                    set_headers: vec![
+                                                        HeaderValueOption {
+                                                            header: Some(
+                                                                HeaderValue {
+                                                                    key: "X-EXT-PROC".to_string(),
+                                                                    value: "YAY IT WORKS".to_string(),
+                                                                    raw_value: vec![],
+                                                                }
+                                                            ),
+                                                            append: None,
+                                                            append_action: 0,
+                                                            keep_empty_value: false,
+                                                        }
+                                                    ],
+                                                    remove_headers: vec![]
+                                                }
+                                            ),
+                                            body_mutation: None,
+                                            trailers: None,
+                                            clear_route_cache: false,
+                                        }
+                                    )
+                                }
                             )
+                            // processing_response::Response::ResponseHeaders(
+                            //     HeadersResponse { response: Some(CommonResponse::default()) }
+                            // )
                         )
                     },
                     processing_request::Request::ResponseBody(_) => {
