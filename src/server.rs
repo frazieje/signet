@@ -45,36 +45,54 @@ impl ExternalProcessor for SignetExternalProcessor {
                     continue;
                 };
                 let resp = match message {
-                    processing_request::Request::RequestHeaders(_) => processing_response(
-                        processing_response::Response::RequestHeaders(
-                            HeadersResponse { response: Some(CommonResponse::default()) }
+                    processing_request::Request::RequestHeaders(_) => {
+                        println!("received RequestHeaders");
+                        processing_response(
+                            processing_response::Response::RequestHeaders(
+                                HeadersResponse { response: Some(CommonResponse::default()) }
+                            )
                         )
-                    ),
-                    processing_request::Request::RequestBody(_) => processing_response(
-                        processing_response::Response::RequestBody(
-                            BodyResponse { response: Some(CommonResponse::default()) }
+                    },
+                    processing_request::Request::RequestBody(_) => {
+                        println!("received RequestBody");
+                        processing_response(
+                            processing_response::Response::RequestBody(
+                                BodyResponse { response: Some(CommonResponse::default()) }
+                            )
                         )
-                    ),
-                    processing_request::Request::RequestTrailers(_) => processing_response(
-                        processing_response::Response::RequestTrailers(
-                            TrailersResponse::default()
+                    },
+                    processing_request::Request::RequestTrailers(_) => {
+                        println!("received RequestTrailers");
+                        processing_response(
+                            processing_response::Response::RequestTrailers(
+                                TrailersResponse::default()
+                            )
                         )
-                    ),
-                    processing_request::Request::ResponseHeaders(_) => processing_response(
-                        processing_response::Response::ResponseHeaders(
-                            HeadersResponse { response: Some(CommonResponse::default()) }
+                    },
+                    processing_request::Request::ResponseHeaders(_) => {
+                        println!("received ResponseHeaders");
+                        processing_response(
+                            processing_response::Response::ResponseHeaders(
+                                HeadersResponse { response: Some(CommonResponse::default()) }
+                            )
                         )
-                    ),
-                    processing_request::Request::ResponseBody(_) => processing_response(
-                        processing_response::Response::ResponseBody(
-                            BodyResponse { response: Some(CommonResponse::default()) }
+                    },
+                    processing_request::Request::ResponseBody(_) => {
+                        println!("received ResponseBody");
+                        processing_response(
+                            processing_response::Response::ResponseBody(
+                                BodyResponse { response: Some(CommonResponse::default()) }
+                            )
                         )
-                    ),
-                    processing_request::Request::ResponseTrailers(_) => processing_response(
-                        processing_response::Response::ResponseTrailers(
-                            TrailersResponse::default()
+                    },
+                    processing_request::Request::ResponseTrailers(_) => {
+                        println!("received ResponseTrailers");
+                        processing_response(
+                            processing_response::Response::ResponseTrailers(
+                                TrailersResponse::default()
+                            )
                         )
-                    )
+                    }
                 };
 
                 if tx.send(Ok(resp)).await.is_err() {
