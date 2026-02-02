@@ -85,7 +85,7 @@ impl ExternalProcessor for SignetExternalProcessor {
                                                             header: Some(
                                                                 HeaderValue {
                                                                     key: "X-EXT-PROC".to_string(),
-                                                                    value: "YAY IT WORKS".to_string(),
+                                                                    value: "YAY".to_string(),
                                                                     raw_value: vec![],
                                                                 }
                                                             ),
