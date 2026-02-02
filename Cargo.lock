@@ -922,6 +922,7 @@ dependencies = [
  "httpsig-hyper",
  "prost",
  "tokio",
+ "tokio-stream",
  "tonic",
  "tonic-prost",
 ]
