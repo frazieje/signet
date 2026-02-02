@@ -107,7 +107,7 @@ impl ExternalProcessor for SignetExternalProcessor {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
+    let addr = "[::]:50051".parse()?;
     let signet = SignetExternalProcessor::default();
 
     Server::builder()
