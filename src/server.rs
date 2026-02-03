@@ -1,3 +1,4 @@
+use std::env;
 use std::pin::Pin;
 use std::sync::Arc;
 use envoy_types::ext_authz::v3::pb::{HeaderValue, HeaderValueOption};
@@ -306,6 +307,8 @@ impl ExternalProcessor for SignetExternalProcessor {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let cwd = env::current_dir().expect("failed to get current dir");
+    println!("Current working directory: {}", cwd.display());
     let addr = "[::]:50051".parse()?;
     let secret_key_string = std::fs::read_to_string("key.pem").expect("Unable to read key.pem");
     let secret_key = SecretKey::from_pem(secret_key_string.as_str()).expect("Unable to read key.pem");
