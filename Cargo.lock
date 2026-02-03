@@ -915,12 +915,15 @@ dependencies = [
 name = "signet"
 version = "0.1.0"
 dependencies = [
+ "base64",
+ "bytes",
  "envoy-types",
  "futures-util",
  "http",
  "http-body-util",
  "httpsig-hyper",
  "prost",
+ "sha2",
  "tokio",
  "tokio-stream",
  "tonic",
