@@ -1,0 +1,51 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: signet-ext-proc-filter
+  namespace: istio-system # Apply to the istio namesapce to apply to ingress gateway
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway # Default label for Istio's ingress pods
+  configPatches:
+    # --- PATCH 1: Insert the Filter into the Gateway's pipeline ---
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.ext_proc
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.ext_proc.v3.ExternalProcessor
+            failure_mode_allow: true # TODO: What do we do if signet is down? For now, we will allow all traffic through, even if signet is down.
+            grpc_service:
+              envoy_grpc:
+                cluster_name: signet-cluster
+            processing_mode:
+              request_header_mode: SEND
+              response_header_mode: SEND
+              request_body_mode: NONE
+              response_body_mode: NONE
+
+    - applyTo: CLUSTER
+      patch:
+        operation: ADD
+        value:
+          name: signet-cluster
+          type: LOGICAL_DNS
+          lb_policy: ROUND_ROBIN
+          http2_protocol_options: {}
+          load_assignment:
+            cluster_name: signet-cluster
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: signet-svc.istio-system.svc.cluster.local # TODO: Need to update namespace. Putting in istio-system for now.
+                          port_value: 9000
