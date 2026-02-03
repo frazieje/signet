@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: signet-svc
+  namespace: istio-system # TODO: We may want to change this, but putting as close to the ingressgateway as possible.
+spec:
+  selector:
+    app: signet # Links this service to the deployment pods
+  ports:
+    - name: grpc # Important: Istio uses the port name to detect protocol
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
+  type: ClusterIP # Internal to the cluster/mesh only

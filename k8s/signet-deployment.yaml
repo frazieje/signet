@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signet-deployment
+  namespace: istio-system # TODO: We may want to change this, but putting as close to the ingressgateway as possible.
+  labels:
+    app: signet-deployment
+spec:
+  replicas: 3 # High availability for an ingress-critical service
+  selector:
+    matchLabels:
+      app: signet
+  template:
+    metadata:
+      labels:
+        app: signet
+    spec:
+      containers:
+        - name: signet
+          # TODO: Replace with signet image once we have it.
+          image: my-registry.io/signet:latest
+          ports:
+            - containerPort: 9000
+              name: grpc-port
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+          # TODO: Health check to ensure the gRPC server is actually ready
+          #readinessProbe:
+          #  exec:
+          #    command: ["/bin/grpc_health_probe", "-addr=:9000"]
+          #  initialDelaySeconds: 5

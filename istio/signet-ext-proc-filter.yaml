@@ -47,5 +47,5 @@ spec:
                   - endpoint:
                       address:
                         socket_address:
-                          address: signet-svc.istio-system.svc.cluster.local # TODO: Need to update namespace. Putting in istio-system for now.
+                          address: signet.istio-system.svc.cluster.local # TODO: Need to update namespace. Putting in istio-system for now.
                           port_value: 9000
