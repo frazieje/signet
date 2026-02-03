@@ -100,9 +100,27 @@ impl UpstreamResponseAcc {
         Ok(())
     }
 
-    fn maybe_attach_headers(&mut self) {
+    async fn maybe_finalize(&mut self, sk: &SecretKey) -> Option<ProcessingResponse> {
         self.maybe_attach_content_digest().unwrap_or_default();
         self.maybe_attach_date().unwrap_or_default();
+        if self.done {
+            let mut http_response = self.build_http_response();
+            let covered_components = COVERED_COMPONENTS
+                .iter()
+                .map(|v| message_component::HttpMessageComponentId::try_from(*v))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap();
+            let signature_params = HttpSignatureParams::try_new(&covered_components).unwrap();
+            http_response.set_message_signature(
+                &signature_params,
+                sk,
+                Some("signature_name"),
+                None::<&Request<&str>>
+            ).await.expect("error signing");
+            Some(http_response.to_processing_response())
+        } else {
+            None
+        }
     }
 
     fn build_http_response(&self) -> Response<Full<Bytes>> {
@@ -228,60 +246,24 @@ impl ExternalProcessor for SignetExternalProcessor {
                         println!("received ResponseHeaders");
                         acc.on_response_headers(response_headers);
                         // Maybe return a processing response that alters the body processing mode
-                        acc.maybe_attach_headers();
-                        processing_response(
-                            processing_response::Response::ResponseHeaders(
-                                HeadersResponse { response:
-                                    Some(
-                                        CommonResponse {
-                                            status: 200,
-                                            header_mutation: Some(
-                                                HeaderMutation {
-                                                    set_headers: vec![
-                                                        HeaderValueOption {
-                                                            header: Some(
-                                                                HeaderValue {
-                                                                    key: "X-EXT-PROC".to_string(),
-                                                                    value: "".to_string(),
-                                                                    raw_value: b"YAY".to_vec(),
-                                                                }
-                                                            ),
-                                                            append: None,
-                                                            append_action: 0,
-                                                            keep_empty_value: false,
-                                                        }
-                                                    ],
-                                                    remove_headers: vec![]
-                                                }
-                                            ),
-                                            body_mutation: None,
-                                            trailers: None,
-                                            clear_route_cache: false,
-                                        }
-                                    )
-                                }
+                        acc.maybe_finalize(sk.as_ref()).await.unwrap_or(
+                            processing_response(
+                                processing_response::Response::ResponseHeaders(
+                                    HeadersResponse { response: Some(CommonResponse::default()) }
+                                )
                             )
                         )
                     },
                     processing_request::Request::ResponseBody(response_body) => {
                         println!("received ResponseBody");
                         acc.on_response_body_chunk(response_body);
-                        acc.maybe_attach_headers();
-                        let mut http_response = acc.build_http_response();
-                        let covered_components = COVERED_COMPONENTS
-                            .iter()
-                            .map(|v| message_component::HttpMessageComponentId::try_from(*v))
-                            .collect::<Result<Vec<_>, _>>()
-                            .unwrap();
-                        let signature_params = HttpSignatureParams::try_new(&covered_components).unwrap();
-
-                        http_response.set_message_signature(
-                            &signature_params,
-                            sk.as_ref(),
-                            Some("signature_name"),
-                            None::<&Request<&str>>
-                        ).await.expect("error signing");
-                        http_response.to_processing_response()
+                        acc.maybe_finalize(sk.as_ref()).await.unwrap_or(
+                            processing_response(
+                                processing_response::Response::RequestBody(
+                                    BodyResponse { response: Some(CommonResponse::default()) }
+                                )
+                            )
+                        )
                     },
                     processing_request::Request::ResponseTrailers(_) => {
                         println!("received ResponseTrailers");
