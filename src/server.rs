@@ -62,8 +62,10 @@ impl UpstreamResponseAcc {
             let Ok(key) = HeaderName::from_bytes(header.key.as_bytes()) else {
                 continue;
             };
-
-            let Ok(value) = http::header::HeaderValue::from_bytes(header.value.as_bytes()) else {
+            let src = header.value.as_str();
+            let hv = http::header::HeaderValue::from_str(src);
+            println!("Header value = {}, hv = {}", src, hv.unwrap().to_str().unwrap());
+            let Ok(value) = http::header::HeaderValue::from_str(src) else {
                 continue;
             };
             self.headers.append(key, value);
