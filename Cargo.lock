@@ -918,16 +918,14 @@ dependencies = [
  "base64",
  "bytes",
  "envoy-types",
- "futures-util",
  "http",
  "http-body-util",
+ "httpdate",
  "httpsig-hyper",
- "prost",
  "sha2",
  "tokio",
  "tokio-stream",
  "tonic",
- "tonic-prost",
 ]
 
 [[package]]
