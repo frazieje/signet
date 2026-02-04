@@ -100,10 +100,11 @@ impl UpstreamResponseAcc {
         Ok(())
     }
 
-    async fn maybe_finalize(&mut self, sk: &SecretKey) -> Option<ProcessingResponse> {
+    async fn maybe_finalize(&mut self, sk: &SecretKey) -> Option<CommonResponse> {
         self.maybe_attach_content_digest().unwrap_or_default();
         self.maybe_attach_date().unwrap_or_default();
         if self.done {
+            println!("Response finished");
             let mut http_response = self.build_http_response();
             let covered_components = COVERED_COMPONENTS
                 .iter()
@@ -117,7 +118,8 @@ impl UpstreamResponseAcc {
                 Some("signature_name"),
                 None::<&Request<&str>>
             ).await.expect("error signing");
-            Some(http_response.to_processing_response())
+            println!("final{:?}", http_response);
+            Some(http_response.to_common_response())
         } else {
             None
         }
@@ -150,11 +152,11 @@ fn processing_response(response_type: processing_response::Response) -> Processi
 }
 
 trait AsProcessingResponse {
-    fn to_processing_response(self) -> ProcessingResponse;
+    fn to_common_response(self) -> CommonResponse;
 }
 
 impl<T> AsProcessingResponse for Response<T> {
-    fn to_processing_response(self) -> ProcessingResponse {
+    fn to_common_response(self) -> CommonResponse {
         let mut hvos: Vec<HeaderValueOption> = vec![];
         for header in self.headers().iter() {
             let mut hvo = HeaderValueOption::default();
@@ -168,26 +170,18 @@ impl<T> AsProcessingResponse for Response<T> {
             hvo.keep_empty_value = true;
             hvos.push(hvo);
         }
-        processing_response(
-            processing_response::Response::ResponseBody(
-                BodyResponse {
-                    response: Some(
-                        CommonResponse {
-                            status: self.status().as_u16().into(),
-                            header_mutation: Some(
-                                HeaderMutation {
-                                    set_headers: hvos,
-                                    remove_headers: vec![]
-                                }
-                            ),
-                            body_mutation: None,
-                            trailers: None,
-                            clear_route_cache: false,
-                        }
-                    )
+        CommonResponse {
+            status: self.status().as_u16().into(),
+            header_mutation: Some(
+                HeaderMutation {
+                    set_headers: hvos,
+                    remove_headers: vec![]
                 }
-            )
-        )
+            ),
+            body_mutation: None,
+            trailers: None,
+            clear_route_cache: false,
+        }
     }
 }
 
@@ -246,22 +240,22 @@ impl ExternalProcessor for SignetExternalProcessor {
                         println!("received ResponseHeaders");
                         acc.on_response_headers(response_headers);
                         // Maybe return a processing response that alters the body processing mode
-                        acc.maybe_finalize(sk.as_ref()).await.unwrap_or(
-                            processing_response(
-                                processing_response::Response::ResponseHeaders(
-                                    HeadersResponse { response: Some(CommonResponse::default()) }
-                                )
+                        processing_response(
+                            processing_response::Response::ResponseHeaders(
+                                HeadersResponse {
+                                    response: acc.maybe_finalize(&sk).await
+                                }
                             )
                         )
                     },
                     processing_request::Request::ResponseBody(response_body) => {
                         println!("received ResponseBody");
                         acc.on_response_body_chunk(response_body);
-                        acc.maybe_finalize(sk.as_ref()).await.unwrap_or(
-                            processing_response(
-                                processing_response::Response::RequestBody(
-                                    BodyResponse { response: Some(CommonResponse::default()) }
-                                )
+                        processing_response(
+                            processing_response::Response::ResponseBody(
+                                BodyResponse {
+                                    response: acc.maybe_finalize(&sk).await
+                                }
                             )
                         )
                     },
