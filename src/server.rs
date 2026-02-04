@@ -6,7 +6,8 @@ use tonic::{transport::Server, Request as TonicRequest, Response as TonicRespons
 use tokio_stream::{wrappers::ReceiverStream, Stream};
 use envoy_types::pb::envoy::service::ext_proc::v3::external_processor_server::{ExternalProcessor, ExternalProcessorServer};
 use envoy_types::pb::envoy::service::ext_proc::v3::{HttpHeaders, processing_request, ProcessingRequest, processing_response, ProcessingResponse, HeadersResponse, CommonResponse, BodyResponse, TrailersResponse, HeaderMutation, HttpBody};
-
+use httpdate::fmt_http_date;
+use std::time::SystemTime;
 use http::{Request, Response};
 use http_body_util::Full;
 
@@ -78,7 +79,13 @@ impl UpstreamResponseAcc {
         if !self.done || self.headers.contains_key("date") {
             return Ok(());
         }
-        // TODO: Add date header
+        // RFC 9110 format: "Tue, 03 Feb 2026 23:12:34 GMT"
+        let date_str = fmt_http_date(SystemTime::now());
+        let value = http::header::HeaderValue::from_str(&date_str).expect("valid HTTP-date");
+        self.headers.insert(
+            HeaderName::from_static("date"),
+            value,
+        );
         Ok(())
     }
 
@@ -91,12 +98,11 @@ impl UpstreamResponseAcc {
 
         // RFC 9530 format: "sha-256=:<base64>:"
         let value_str = format!("sha-256=:{b64}:");
-
+        let value = http::header::HeaderValue::from_str(&value_str).expect("valid HTTP-digest");
         self.headers.insert(
             HeaderName::from_static("content-digest"),
-            http::header::HeaderValue::from_str(&value_str)?,
+            value,
         );
-
         Ok(())
     }
 
