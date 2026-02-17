@@ -48,3 +48,4 @@ The project is useful when you want **standardized HTTP message signatures** in 
 git clone https://github.com/frazieje/signet.git
 cd signet
 cargo build --release
+```
