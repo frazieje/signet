@@ -9,6 +9,6 @@ spec:
   ports:
     - name: grpc # Important: Istio uses the port name to detect protocol
       protocol: TCP
-      port: 9000
-      targetPort: 9000
+      port: 50051
+      targetPort: 50051
   type: ClusterIP # Internal to the cluster/mesh only

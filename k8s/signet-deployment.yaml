@@ -6,7 +6,7 @@ metadata:
   labels:
     app: signet-deployment
 spec:
-  replicas: 3 # High availability for an ingress-critical service
+  replicas: 1 # High availability for an ingress-critical service
   selector:
     matchLabels:
       app: signet
@@ -18,10 +18,16 @@ spec:
       containers:
         - name: signet
           # TODO: Replace with signet image once we have it.
-          image: my-registry.io/signet:latest
+          image: us-east1-docker.pkg.dev/signet-487814/http-responder/signet:1.0
+          imagePullPolicy: Always
           ports:
-            - containerPort: 9000
+            - containerPort: 50051
               name: grpc-port
+          volumeMounts:
+            - name: signet-key
+              mountPath: /app/key.pem
+              subPath: key.pem
+              readOnly: true
           resources:
             limits:
               cpu: "500m"
@@ -34,3 +40,10 @@ spec:
           #  exec:
           #    command: ["/bin/grpc_health_probe", "-addr=:9000"]
           #  initialDelaySeconds: 5
+      volumes:
+        - name: signet-key
+          secret:
+            secretName: signet-key
+            items:
+              - key: key.pem
+                path: key.pem

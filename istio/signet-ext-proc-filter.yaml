@@ -20,17 +20,21 @@ spec:
         operation: INSERT_BEFORE
         value:
           name: envoy.filters.http.ext_proc
+          disabled: false
           typed_config:
             "@type": type.googleapis.com/envoy.extensions.filters.http.ext_proc.v3.ExternalProcessor
-            failure_mode_allow: true # TODO: What do we do if signet is down? For now, we will allow all traffic through, even if signet is down.
+            failure_mode_allow: false # TODO: What do we do if signet is down? For now, we will allow all traffic through, even if signet is down.
+            message_timeout: 2s
             grpc_service:
               envoy_grpc:
                 cluster_name: signet-cluster
             processing_mode:
-              request_header_mode: SEND
-              response_header_mode: SEND
+              request_header_mode: SKIP
               request_body_mode: NONE
+              response_header_mode: SEND
               response_body_mode: BUFFERED
+              request_trailer_mode: SKIP
+              response_trailer_mode: SKIP
 
     - applyTo: CLUSTER
       patch:
@@ -47,5 +51,5 @@ spec:
                   - endpoint:
                       address:
                         socket_address:
-                          address: signet.istio-system.svc.cluster.local # TODO: Need to update namespace. Putting in istio-system for now.
-                          port_value: 9000
+                          address: signet-svc.istio-system.svc.cluster.local # TODO: Need to update namespace. Putting in istio-system for now.
+                          port_value: 50051
