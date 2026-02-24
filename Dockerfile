@@ -6,8 +6,8 @@ WORKDIR /app
 # 1) Cache dependencies first (speeds up rebuilds)
 COPY Cargo.toml Cargo.lock ./
 
-# Create a dummy src to let cargo resolve + build deps
-RUN mkdir src && echo "fn main() {}" > src/server.rs
+# Create dummy src to let cargo resolve + build deps
+RUN mkdir src && echo "fn main() {}" > src/main.rs && echo "" > src/lib.rs
 RUN cargo build --release
 RUN rm -rf src
 

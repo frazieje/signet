@@ -35,11 +35,10 @@ spec:
             requests:
               cpu: "100m"
               memory: "128Mi"
-          # TODO: Health check to ensure the gRPC server is actually ready
-          #readinessProbe:
-          #  exec:
-          #    command: ["/bin/grpc_health_probe", "-addr=:9000"]
-          #  initialDelaySeconds: 5
+          readinessProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: 5
       volumes:
         - name: signet-key
           secret:
