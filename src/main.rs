@@ -34,7 +34,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Server::builder()
         .add_service(health_service)
-        .add_service(ExternalProcessorServer::new(signet))
+        .add_service(
+            ExternalProcessorServer::new(signet)
+                .max_decoding_message_size(16 * 1024 * 1024),
+        )
         .serve_with_shutdown(addr, async {
             tokio::select! {
                 _ = tokio::signal::ctrl_c() => {

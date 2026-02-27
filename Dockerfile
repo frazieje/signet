@@ -5,15 +5,17 @@ WORKDIR /app
 
 # 1) Cache dependencies first (speeds up rebuilds)
 COPY Cargo.toml Cargo.lock ./
+COPY tools/loadtest/Cargo.toml tools/loadtest/Cargo.toml
 
-# Create dummy src to let cargo resolve + build deps
-RUN mkdir src && echo "fn main() {}" > src/main.rs && echo "" > src/lib.rs
+# Create dummy sources to let cargo resolve + build deps
+RUN mkdir src && echo "fn main() {}" > src/main.rs && echo "" > src/lib.rs \
+    && mkdir -p tools/loadtest/src && echo "fn main() {}" > tools/loadtest/src/main.rs
 RUN cargo build --release
-RUN rm -rf src
+RUN rm -rf src tools/loadtest/src
 
 # 2) Copy actual source and build
 COPY . .
-RUN cargo build --release
+RUN touch src/lib.rs src/main.rs && cargo build --release -p signet
 
 # ---- runtime stage ----
 FROM debian:bookworm-slim AS runtime
@@ -34,4 +36,3 @@ EXPOSE 50051
 
 ENV RUST_LOG=info
 ENTRYPOINT ["/app/signet"]
-

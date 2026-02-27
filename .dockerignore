@@ -1,0 +1,6 @@
+target/
+.git/
+.claude/
+*.pem
+ARCHITECTURE.md
+TODO.md

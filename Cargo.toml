@@ -30,3 +30,6 @@ tracing-subscriber = "0.3"
 sha2 = "0.10.9"
 base64 = "0.22.1"
 p256 = "0.13"
+
+[workspace]
+members = ["tools/loadtest"]
